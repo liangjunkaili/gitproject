@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import gitweb.com.auth.AuthUtil;
+import gitweb.com.card.CardUtil;
+import gitweb.com.card.Code;
 import gitweb.com.httpUtil.HttpClientUtil;
 import gitweb.com.menu.Button;
 import gitweb.com.menu.ClickButton;
@@ -245,35 +247,60 @@ public class Weixin {
 	@RequestMapping("createCard")
 	@ResponseBody
 	public JSONObject createCard(HttpServletRequest request, HttpServletResponse response){
-		String json = inputToString(request);
+//		String json = inputToString(request);
+		String json = CardUtil.initCard();
 		String token = AuthUtil.getInstance().get_access_token().get("access_token");
 		String url = AuthUtil.CARD_CREATE.replace("ACCESS_TOKEN", token);
 		JSONObject jsonObject = HttpClientUtil.doPostStr(url,json);
 		return jsonObject;
 	}
-	public static int createQrcode(String token,String json){
-		int result = 0;
+	/**
+	 * 投放卡券
+	 * @param token
+	 * @param json
+	 * @return
+	 */
+	@RequestMapping("createQrcode")
+	@ResponseBody
+	public JSONObject createQrcode(HttpServletRequest request, HttpServletResponse response){
+		String cardId = request.getParameter("cardId");
+		String code = request.getParameter("code");
+		String json = CardUtil.initQrcode(cardId, code);
+		String token = AuthUtil.getInstance().get_access_token().get("access_token");
 		String url = AuthUtil.QRCODE_CREATE.replace("ACCESS_TOKEN", token);
 		JSONObject jsonObject = HttpClientUtil.doPostStr(url,json);
-		System.out.println(jsonObject.toString());
-		if(jsonObject!=null){
-			result = jsonObject.getInt("errcode");
-		}
-		return result;
+		return jsonObject;
 	}
 	/**
-	 * {
-		 "errcode": 0, 
-		 "errmsg": "ok", 
-		 "ticket": "gQEo8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyWWp0bkJLaURjSzMxNmZodU5xNEwAAgSHSh5aAwQIBwAA", 
-		 "expire_seconds": 1800, 
-		 "url": "http://weixin.qq.com/q/02YjtnBKiDcK316fhuNq4L", 
-		 "show_qrcode_url": "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQEo8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyWWp0bkJLaURjSzMxNmZodU5xNEwAAgSHSh5aAwQIBwAA"
-		}
-	 * @param args
+	 * 查询CODE接口
+	 * @param request
+	 * @param response
+	 * @return
 	 */
-	public static int viewQrcode(String ticket){
+	@RequestMapping("getCode")
+	@ResponseBody
+	public JSONObject getCode(HttpServletRequest request, HttpServletResponse response){
+		String cardId = request.getParameter("cardId");
+		String code = request.getParameter("code");
+		String check_consume = request.getParameter("check_consume");
+		Code c = new Code();
+		c.setCard_id(cardId);
+		c.setCode(code);
+		c.setCheck_consume(Boolean.valueOf(check_consume));
+		String json = JSONObject.fromObject(c).toString();
+		String token = AuthUtil.getInstance().get_access_token().get("access_token");
+		String url = AuthUtil.QRCODE_CREATE.replace("ACCESS_TOKEN", token);
+		JSONObject jsonObject = HttpClientUtil.doPostStr(url,json);
+		return jsonObject;
+	}
+	/**
+	 * 显示二维码
+	 * @param ticket
+	 * @return
+	 */
+	public static int viewQrcode(HttpServletRequest request, HttpServletResponse response){
 		int result = 0;
+		String ticket = request.getParameter("ticket");
 		String url = AuthUtil.SHOW_QRCODE.replace("TICKET", ticket);
 		JSONObject jsonObject = HttpClientUtil.doGetStr(url);
 		System.out.println(jsonObject.toString());

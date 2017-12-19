@@ -19,7 +19,7 @@ public class AuthUtil {
 	private static final String CALLBACK_IP_URL = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=ACCESS_TOKEN";
 	public static final String UPLOADIMG_URL = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=ACCESS_TOKEN";
 	public static final String CARD_CREATE = "https://api.weixin.qq.com/card/create?access_token=ACCESS_TOKEN";
-	public static final String QRCODE_CREATE = "https://api.weixin.qq.com/card/qrcode/create?access_token=TOKEN";
+	public static final String QRCODE_CREATE = "https://api.weixin.qq.com/card/qrcode/create?access_token=ACCESS_TOKEN";
 	public static final String SHOW_QRCODE = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=TICKET";
 	public static final String CREATE_MENU_URL = "https://api.weixin.qq.com/cgi-bin/menu/create?access_token=ACCESS_TOKEN";
 	public static final String QUERY_MENU_URL = "https://api.weixin.qq.com/cgi-bin/menu/get?access_token=ACCESS_TOKEN";
@@ -42,6 +42,16 @@ public class AuthUtil {
 		}
 		return token;
 	}
+	/**
+     * 通过access_token获取jsapi_ticket
+     * @param access_token
+     * @return
+     */
+    private static String getJsapi_ticket(String access_token){
+    	JSONObject jsonObject = HttpClientUtil.doGetStr("https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token="+access_token+"&type=jsapi");
+		String ticket = (String) jsonObject.get("ticket");
+		return ticket;
+    }
 	//获取微信服务器IP地址
 	private static String getcallbackip(String token){
 		String result = "";
@@ -61,8 +71,10 @@ public class AuthUtil {
         } else {
             System.out.println("accessToken 超时 ， 或者不存在 ， 重新获取");
             AccessToken access_token=getAccessToken();
+            String jsapi_token = getJsapi_ticket(access_token.getToken());
             map.put("time", nowDate + "");
             map.put("access_token", access_token.getToken());
+            map.put("jsapi_token", jsapi_token);
         }
 		
 		return map;

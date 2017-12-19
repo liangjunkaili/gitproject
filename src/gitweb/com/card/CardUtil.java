@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 
 import gitweb.com.auth.AuthUtil;
 import gitweb.com.httpUtil.HttpClientUtil;
@@ -19,8 +20,11 @@ public class CardUtil {
 
 	private static final String UPLOADIMG_URL = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=ACCESS_TOKEN";
 	private static final String CARD_CREATE = "https://api.weixin.qq.com/card/create?access_token=ACCESS_TOKEN";
-	private static final String QRCODE_CREATE = "https://api.weixin.qq.com/card/qrcode/create?access_token=TOKEN";
+	private static final String QRCODE_CREATE = "https://api.weixin.qq.com/card/qrcode/create?access_token=ACCESS_TOKEN";
 	private static final String SHOW_QRCODE = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=TICKET";
+	private static final String GET = "https://api.weixin.qq.com/card/code/get?access_token=ACCESS_TOKEN";
+	//获取用户已领取卡券接口
+	private static final String getcardlist = "https://api.weixin.qq.com/card/user/getcardlist?access_token=TOKEN";
 	public static String upload(String filePath,String accessToken) throws IOException{
 		File file = new File(filePath);
 		if(!file.exists()||!file.isFile()){
@@ -117,6 +121,17 @@ public class CardUtil {
 		}
 		return result;
 	}
+	//查询Code接口
+	public static int get(String token,String json){
+		int result = 0;
+		String url = GET.replace("ACCESS_TOKEN", token);
+		JSONObject jsonObject = HttpClientUtil.doPostStr(url,json);
+		System.out.println(jsonObject.toString());
+		if(jsonObject!=null){
+			result = jsonObject.getInt("errcode");
+		}
+		return result;
+	}
 	/**
 	 * {
 		 "errcode": 0, 
@@ -137,6 +152,49 @@ public class CardUtil {
 			result = jsonObject.getInt("errcode");
 		}
 		return result;
+	}
+	public static String initCard(){
+		Card c = new Card();
+		c.setCard_type("GROUPON");
+		GrouponCard groupon = new GrouponCard();
+		groupon.setDeal_detail("99元试听课");
+		BaseInfo base_info = new BaseInfo();
+		base_info.setLogo_url("http://mmbiz.qpic.cn/mmbiz_png/QKEv8GPCZibwHZrmbWcQ6KOb3IKwlYSOmKqicICViacgbWbkPuOvhhJ1Wqe7DmJ8qFShicnbX0yicVpRr0HhpNza68Q/0");
+		base_info.setCode_type("CODE_TYPE_TEXT");
+		base_info.setBrand_name("MagicABC");
+		base_info.setTitle("100元券");
+		base_info.setColor("Color010");
+		base_info.setNotice("请联系MagicABC");
+		base_info.setDescription("不可与其他优惠同享");
+		Sku sku = new Sku();
+		sku.setQuantity(100);
+		base_info.setSku(sku );
+		DateInfo date_info = new DateInfo();
+		date_info.setType("DATE_TYPE_FIX_TIME_RANGE");
+		date_info.setBegin_timestamp((int) (new Date().getTime()/1000));
+		date_info.setEnd_timestamp((int) (new Date().getTime()/1000)+24*60*60);
+		base_info.setDate_info(date_info );
+		groupon.setBase_info(base_info );
+		c.setGroupon(groupon );
+		BaseCard bc = new BaseCard();
+		bc.setCard(c);
+		String card = JSONObject.fromObject(bc).toString();
+		return card;
+	}
+	public static String initQrcode(String cardId,String code){
+		QrCard qc = new QrCard();
+		qc.setAction_name("QR_CARD");
+		qc.setExpire_seconds(1800);
+		ActionInfo action_info = new ActionInfo();
+		QRCode card = new QRCode();
+		card.setCard_id(cardId);
+		card.setCode(code);
+		card.setIs_unique_code(false);
+		card.setOuter_str("12b");
+		action_info.setCard(card );
+		qc.setAction_info(action_info );
+		String s = JSONObject.fromObject(qc).toString();
+		return s;
 	}
 	public static void main(String[] args) {
 		String token = AuthUtil.getInstance().get_access_token().get("access_token");
